@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "adminUsername": {
@@ -50,12 +50,19 @@
       "metadata": {
         "description": "Location for all resources."
       }
+    },
+    "buildKitURLTemplate": {
+      "type": "string",
+      "metadata": {
+        "description": "The URL template to use for BuildKit sites. For site URLs like SITE_NAME.dev.yoursite.org you should create a wildcard DNS pointer to the HostName provided post deployment."
+      }
     }
   },
   "variables": {
     "storageAccountName": "CiviCRMBuildKitStorageAccount",
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
+    "networkSecurityGroup": "CiviCRMBuildKitNSG",
     "nicName": "CiviCRMBuildKitNic",
     "addressPrefix": "10.0.0.0/16",
     "subnetName": "Subnet",
@@ -79,7 +86,63 @@
     },
     "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]"
   },
+
   "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2016-03-30",
+      "name": "[variables('networkSecurityGroup')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "network-security-group"
+      },
+      "properties": {
+        "securityRules": [
+          {
+            "name": "HTTP",
+            "properties": {
+              "description": "HTTP Endpoint",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "HTTPS",
+            "properties": {
+              "description": "HTTPS Endpoint",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "SSH",
+            "properties": {
+              "description": "SSH Endpoint",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 300,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2018-11-01",
@@ -200,7 +263,58 @@
             "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob)]"
           }
         }
-      }
+      },
+      "resources": [
+        {
+          "apiVersion": "2018-10-01",
+          "type": "extensions",
+          "name": "Force APT Update",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+          ],
+          "tags": {
+            "displayName": "Install CURL"
+          },
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.0",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [
+                "https://lab.civicrm.org"
+              ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "sudo doAzureBuildKitPrep.sh"
+            }
+          }
+        },
+        {
+          "apiVersion": "2018-10-01",
+          "type": "extensions",
+          "name": "Install BuildKit",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+          ],
+          "tags": {
+            "displayName": "Install BuildKit"
+          },
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.0",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+            },
+            "protectedSettings": {
+              "commandToExecute": "curl -Ls https://civicrm.org/get-buildkit.sh | bash -s -- --full --dir ~/buildkit"
+            }
+          }
+        }
+      ]
     }
   ],
   "outputs": {

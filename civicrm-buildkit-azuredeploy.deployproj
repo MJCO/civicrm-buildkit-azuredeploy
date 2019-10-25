@@ -30,6 +30,12 @@
     </None>
     <Content Include="Deploy-AzureResourceGroup.ps1" />
     <Content Include="README.md" />
+    <None Include="scripts\doBuildKitInstall.sh" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties azuredeploy_1json__JsonSchema="https://schema.management.azure.com/schemas//2019-04-01/deploymentTemplate.json#" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>
