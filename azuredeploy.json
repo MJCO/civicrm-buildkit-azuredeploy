@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "adminUsername": {
@@ -59,20 +59,20 @@
     }
   },
   "variables": {
-    "storageAccountName": "CiviCRMBuildKitStorageAccount",
+    "storageAccountName": "bkonazstorageaccount",
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
-    "networkSecurityGroup": "CiviCRMBuildKitNSG",
-    "nicName": "CiviCRMBuildKitNic",
+    "networkSecurityGroup": "bkonaznsg",
+    "nicName": "bkonaznic",
     "addressPrefix": "10.0.0.0/16",
     "subnetName": "Subnet",
     "subnetPrefix": "10.0.0.0/24",
     "storageAccountType": "Standard_LRS",
-    "publicIPAddressName": "CiviCRMBuildKitPublicIP",
+    "publicIPAddressName": "bkonazpublicip",
     "publicIPAddressType": "Dynamic",
-    "vmName": "CiviCRMBuildKit",
+    "vmName": "bkonaz",
     "vmSize": "Standard_A1",
-    "virtualNetworkName": "CiviCRMBuildKitVirtualNet",
+    "virtualNetworkName": "bkonazvnet",
     "linuxConfiguration": {
       "disablePasswordAuthentication": true,
       "ssh": {
@@ -132,7 +132,7 @@
               "description": "SSH Endpoint",
               "protocol": "Tcp",
               "sourcePortRange": "*",
-              "destinationPortRange": "*",
+              "destinationPortRange": "22",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
@@ -171,6 +171,12 @@
       "apiVersion": "2018-11-01",
       "name": "[variables('virtualNetworkName')]",
       "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroup'))]"
+      ],
+      "tags": {
+        "displayName": "virtual-network"
+      },
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -181,7 +187,10 @@
           {
             "name": "[variables('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('subnetPrefix')]"
+              "addressPrefix": "[variables('subnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroup'))]"
+              }
             }
           }
         ]
@@ -268,13 +277,13 @@
         {
           "apiVersion": "2018-10-01",
           "type": "extensions",
-          "name": "Force APT Update",
+          "name": "bkonazinstallbuildkit",
           "location": "[parameters('location')]",
           "dependsOn": [
             "[resourceId('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
           ],
           "tags": {
-            "displayName": "Install CURL"
+            "displayName": "install-buildkit"
           },
           "properties": {
             "publisher": "Microsoft.Azure.Extensions",
@@ -283,34 +292,11 @@
             "autoUpgradeMinorVersion": true,
             "settings": {
               "fileUris": [
-                "https://lab.civicrm.org"
+                "https://lab.civicrm.org/MikeyMJCO/civicrm-buildkit-azuredeploy/raw/master/scripts/doBuildKitInstall.sh"
               ]
             },
             "protectedSettings": {
-              "commandToExecute": "sudo doAzureBuildKitPrep.sh"
-            }
-          }
-        },
-        {
-          "apiVersion": "2018-10-01",
-          "type": "extensions",
-          "name": "Install BuildKit",
-          "location": "[parameters('location')]",
-          "dependsOn": [
-            "[resourceId('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
-          ],
-          "tags": {
-            "displayName": "Install BuildKit"
-          },
-          "properties": {
-            "publisher": "Microsoft.Azure.Extensions",
-            "type": "CustomScript",
-            "typeHandlerVersion": "2.0",
-            "autoUpgradeMinorVersion": true,
-            "settings": {
-            },
-            "protectedSettings": {
-              "commandToExecute": "curl -Ls https://civicrm.org/get-buildkit.sh | bash -s -- --full --dir ~/buildkit"
+              "commandToExecute": "[concat('sudo sh doBuildKitInstall.sh ', '--user', ' ', parameters('adminUsername'), ' ', '--url-template', ' ', parameters('buildKitURLTemplate'))]"
             }
           }
         }
