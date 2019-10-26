@@ -13,6 +13,16 @@ This template will provide you with configurable options for:
 
 This template will deploy an A1 size VM in the resource group location and return the FQDN of the VM and an SSH command example.
 
+## The Deployed VM
+
+This template will result in a VM (plus associated resources) running the chosen version of Ubuntu LTS with the following scripted install steps performed automatically:
+
+* Curl installed
+* Chosen admin user set to `NOPASSWD` for using Sudo.
+* Buildkit installed (using `--full`) to `/opt/buildkit`
+* Buildkit Bin on PATH (via script placed in `/etc/profile.d`)
+* Buildkit configured to generate site URLs using the chosen URL Template.
+
 ## Deployment Instructions
 
 ### Using the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/) (`az`)

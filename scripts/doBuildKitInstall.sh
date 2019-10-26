@@ -77,3 +77,7 @@ sudo echo "URL_TEMPLATE=\"http://%SITE_NAME%.${urltemplate}\"" | sudo tee -a /et
 sudo curl -O https://lab.civicrm.org/MikeyMJCO/civicrm-buildkit-azuredeploy/raw/master/scripts/10-buildkit-path.sh
 sudo mv 10-buildkit-path.sh /etc/profile.d/
 sudo chmod +x /etc/profile.d/10-buildkit-path.sh
+
+## Set debconfig for interactive mode.
+
+sudo echo 'debconf debconf/frontend select interactive' | debconf-set-selections
