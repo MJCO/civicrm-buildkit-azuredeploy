@@ -23,6 +23,8 @@ This template will result in a VM (plus associated resources) running the chosen
 * Buildkit Bin on PATH (via script placed in `/etc/profile.d`)
 * Buildkit configured to generate site URLs using the chosen URL Template.
 
+You will need to run the [post-installation configuration steps](https://docs.civicrm.org/dev/en/latest/tools/buildkit/#config) for Buildkit as outlined in the docs. You will not need to set the path.
+
 ## Deployment Instructions
 
 ### Using the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/) (`az`)
