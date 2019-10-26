@@ -5,7 +5,19 @@
     "adminUsername": {
       "value": null
     },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "adminPasswordOrKey": {
+      "value": null
+    },
     "dnsLabelPrefix": {
+      "value": null
+    },
+    "ubuntuOSVersion": {
+      "value": "18.04-LTS"
+    },
+    "buildKitURLTemplate": {
       "value": null
     }
   }
