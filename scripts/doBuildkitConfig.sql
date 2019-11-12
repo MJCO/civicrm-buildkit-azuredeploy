@@ -1,0 +1,1 @@
+GRANT ALL PRIVILEGES ON *.* TO 'civicrmbuildkit'@'localhost' IDENTIFIED BY 'civicrmbuildkit' WITH GRANT OPTION;

@@ -70,8 +70,7 @@ sudo -i -u "$adminuser" curl -Ls https://civicrm.org/get-buildkit.sh | sudo -i -
 
 ## Set an Environment Variable for the URL Template
 
-sudo echo "URL_TEMPLATE=\"http://%SITE_NAME%.${urltemplate}\"" | sudo tee -a /etc/environment
-
+sudo echo "URL_TEMPLATE=\"http://%SITE_NAME%.${urltemplate}\"" | sudo tee /opt/buildkit/app/civibuild.conf
 ## Add profile script for BuildKit path.
 
 sudo curl -O https://lab.civicrm.org/MikeyMJCO/civicrm-buildkit-azuredeploy/raw/master/scripts/10-buildkit-path.sh
