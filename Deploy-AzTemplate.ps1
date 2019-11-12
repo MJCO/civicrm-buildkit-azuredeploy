@@ -77,14 +77,14 @@ Write-Host "Running a $deploymentScope scoped deployment..."
 $ArtifactsLocationParameter = $TemplateJson | Select-Object -expand 'parameters' -ErrorAction Ignore | Select-Object -Expand '_artifactsLocation' -ErrorAction Ignore
 
 #if the switch is set or the standard parameter is present in the template, upload all artifacts
-if ($UploadArtifacts -Or $ArtifactsLocationParameter -ne $null) {
+if ($UploadArtifacts -Or $null -ne $ArtifactsLocationParameter) {
     # Convert relative paths to absolute paths if needed
     $ArtifactStagingDirectory = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $ArtifactStagingDirectory))
     $DSCSourceFolder = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $DSCSourceFolder))
 
     # Parse the parameter file and update the values of artifacts location and artifacts location SAS token if they are present
     $JsonParameters = Get-Content $TemplateParametersFile -Raw | ConvertFrom-Json
-    if (($JsonParameters | Get-Member -Type NoteProperty 'parameters') -ne $null) {
+    if ($null -ne ($JsonParameters | Get-Member -Type NoteProperty 'parameters')) {
         $JsonParameters = $JsonParameters.parameters
     }
     $ArtifactsLocationName = '_artifactsLocation'
@@ -109,7 +109,7 @@ if ($UploadArtifacts -Or $ArtifactsLocationParameter -ne $null) {
     $StorageAccount = (Get-AzStorageAccount | Where-Object { $_.StorageAccountName -eq $StorageAccountName })
 
     # Create the storage account if it doesn't already exist
-    if ($StorageAccount -eq $null) {
+    if ($null -ne $StorageAccount) {
         $StorageResourceGroupName = 'ARM_Deploy_Staging'
         New-AzResourceGroup -Location "$Location" -Name $StorageResourceGroupName -Force
         $StorageAccount = New-AzStorageAccount -StorageAccountName $StorageAccountName -Type 'Standard_LRS' -ResourceGroupName $StorageResourceGroupName -Location "$Location"
@@ -121,7 +121,7 @@ if ($UploadArtifacts -Or $ArtifactsLocationParameter -ne $null) {
     $ArtifactStagingLocation = $StorageAccount.Context.BlobEndPoint + $StorageContainerName + "/"   
 
     # Generate the value for artifacts location if it is not provided in the parameter file
-    if ($OptionalParameters[$ArtifactsLocationName] -eq $null) {
+    if ($null -eq $OptionalParameters[$ArtifactsLocationName]) {
         #if the defaultValue for _artifactsLocation is using the template location, use the defaultValue, otherwise set it to the staging location
         $defaultValue = $ArtifactsLocationParameter | Select-Object -Expand 'defaultValue' -ErrorAction Ignore
         if ($defaultValue -like '*deployment().properties.templateLink.uri*') {
@@ -145,7 +145,7 @@ if ($UploadArtifacts -Or $ArtifactsLocationParameter -ne $null) {
         }
     }
     # Generate a 4 hour SAS token for the artifacts location if one was not provided in the parameters file
-    if ($OptionalParameters[$ArtifactsLocationSasTokenName] -eq $null) {
+    if ($null -eq $OptionalParameters[$ArtifactsLocationSasTokenName]) {
         $OptionalParameters[$ArtifactsLocationSasTokenName] = (New-AzStorageContainerSASToken -Container $StorageContainerName -Context $StorageAccount.Context -Permission r -ExpiryTime (Get-Date).AddHours(4))
     }
 
@@ -167,7 +167,7 @@ Write-Host ($OptionalParameters | Out-String)
 
 # Create the resource group only when it doesn't already exist - and only in RG scoped deployments
 if ($deploymentScope -eq "ResourceGroup") {
-    if ((Get-AzResourceGroup -Name $ResourceGroupName -Location $Location -Verbose -ErrorAction SilentlyContinue) -eq $null) {
+    if ($null -eq (Get-AzResourceGroup -Name $ResourceGroupName -Location $Location -Verbose -ErrorAction SilentlyContinue)) {
         New-AzResourceGroup -Name $ResourceGroupName -Location $Location -Verbose -Force -ErrorAction Stop
     }
 }
